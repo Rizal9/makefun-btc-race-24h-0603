@@ -75,11 +75,16 @@ function windowHigh(): number | null {
 
 await runBars({
   onBatch(state: BarsState, batch: { bars: Bar[] }) {
+    let fresh = false;
     for (const bar of batch.bars) {
       if (bar.symbol !== SYMBOL) continue;
       closes.push(Number(bar.c));
       if (closes.length > WINDOW_BARS) closes.shift();
+      fresh = true;
     }
+    // No fresh bar for the symbol this minute (a gap): decide on nothing
+    // rather than re-deciding on a stale close.
+    if (!fresh) return [];
     if (state.warmingUp) return [];
     const bar = state.latest.get(SYMBOL);
     if (bar === undefined) return [];
